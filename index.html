@@ -291,24 +291,26 @@ const LIQ_Y = FK.cy;
 const CHIPS=[[FK.cx-16,FK.cy+42],[FK.cx+4,FK.cy+46],[FK.cx+18,FK.cy+38],[FK.cx-8,FK.cy+48],[FK.cx+12,FK.cy+44]];
 const STP={x:NKL+2, y:NKT-2, w:nkHalf*2-4, h:10};
 
-// Straight Side Arm (가지관)
+// Straight Side Arm (가지관) - 너비 정의(w) 추가!
 const ARM = {
     sx: NKR,
-    sy: NKT + 70, // 꺾어지는 위치
+    sy: NKT + 60, // 꺾어지는 위치
     ex: 350,      // 고무관 연결부
-    ey: NKT + 85  // 비스듬히 아래로
+    ey: NKT + 75, // 비스듬히 아래로
+    w: 12         // 가지관 두께
 };
 const THR_BY=ARM.sy;
 const THR={rx:FK.cx-2, top:NKT-50, bot:THR_BY+10};
 const STD={rx:680, rt:TBL-370, rb:TBL, bx:650, bw:65, cy:TBL-252};
-const IB={x:540, top:TBL-150, w:130, bot:TBL}; // Taller beaker
+const IB={x:540, top:TBL-150, w:130, bot:TBL}; 
 const IB_WT=TBL-115;
-const TM={x:600, y:TBL-165}; // Test tube origin higher
+const TM={x:600, y:TBL-165}; 
 const T_ANG=1.05,T_LEN=80;
 
 function tubeAxisPt(d){return{x:TM.x+Math.cos(T_ANG)*d,y:TM.y+Math.sin(T_ANG)*d};}
 const TUBE_HALF_W=8;
-const RPTH=[{x:ARM.ex,y:ARM.ey},{x:400,y:ARM.ey+10},{x:460,y:TBL-210},{x:520,y:TBL-180},{x:TM.x,y:TM.y}];
+// 고무관 연결부 살짝 오버랩되도록 조정 (ARM.ex - 8)
+const RPTH=[{x:ARM.ex - 8,y:ARM.ey - 2},{x:400,y:ARM.ey+10},{x:460,y:TBL-210},{x:520,y:TBL-180},{x:TM.x,y:TM.y}];
 let tubePoly=[];
 function buildPoly(){tubePoly=[];for(let t=0;t<=1;t+=.01){let x=0,y=0;const n=RPTH.length-1;for(let i=0;i<=n;i++){const b=bern(n,i,t);x+=RPTH[i].x*b;y+=RPTH[i].y*b;}tubePoly.push({x,y});}}
 function bern(n,i,t){return comb(n,i)*Math.pow(t,i)*Math.pow(1-t,n-i)}
@@ -376,7 +378,7 @@ function updP(dt){
       if(d<6){p.zone='arm';} else {p.x+=(dx/d)*40*dt*sp;p.y+=(dy/d)*40*dt*sp;}
     }
     else if(p.zone==='arm'){
-      const tx2=RPTH[0].x, ty2=RPTH[0].y;
+      const tx2=ARM.ex, ty2=ARM.ey;
       const dx=tx2-p.x, dy=ty2-p.y;
       const d=Math.sqrt(dx*dx+dy*dy);
       if(d<4){p.zone='tube';p.vx=0;p.vy=0;p.pi=0;} else {p.x+=(dx/d)*40*dt*sp;p.y+=(dy/d)*40*dt*sp;}
@@ -389,7 +391,12 @@ function updP(dt){
       }
       p.pi+=25*dt*sp;
       if(p.pi>=tubePoly.length-2){
-        p.zone='condensing';
+        // [버그 수정] 시험관이 교체 중이거나 없으면 늦게 도착한 입자는 뭉치지 않게 숨김 처리
+        if (S.tube >= 2 || S.tA !== 0) {
+            p.zone = 'sealed';
+        } else {
+            p.zone='condensing';
+        }
       } else {
         const idx=Math.min(Math.floor(p.pi),tubePoly.length-1);
         const tg=tubePoly[idx];
@@ -413,13 +420,13 @@ function updP(dt){
       let clamped=false;
       
       const ca = p.type === 'ethanol' ? Math.min(S.ethC, 30) : Math.min(S.watC, 30);
-      const lw = Math.max(10, (ca/30)*T_LEN*0.65);
-      const pr = p.r;
+      const lw = Math.max(15, (ca/30)*T_LEN*0.65); // 최소 영역 15 확보
+      const pr = p.r; // 입자 반경
       
-      // 입자 크기(pr)를 정확히 반영하여 유리관 바깥으로 나가지 않도록 Clamp
-      const minA = T_LEN - lw + pr;
+      // [버그 수정] 입자 크기(pr)와 최소 여유공간을 완벽히 계산하여 관 바깥으로 절대 나가지 않도록 패딩 부여
+      const minA = T_LEN - lw + pr + 1;
       const maxA = T_LEN - pr - 1;
-      const maxPerp = 3.0; // 시각적 액체 두께(6.5) 내부에 완전히 들어가도록
+      const maxPerp = TUBE_HALF_W - pr - 0.5; // 시험관 두께 밖으로 빠져나가지 못하게 강력 통제
       
       if(proj.along<minA){proj.along=minA;clamped=true;}
       if(proj.along>maxA){proj.along=maxA;clamped=true;}
@@ -503,17 +510,23 @@ function draw(){
   const armSy = ARM.sy; const armW = ARM.w; const armEx = ARM.ex; const armEy = ARM.ey;
   
   C.beginPath();
-  C.moveTo(tx(NKL), ty(NKT)); // Top left neck
-  C.lineTo(tx(NKL), ty(NKB)); // Down left neck to sphere
-  C.arc(tx(FK.cx), ty(FK.cy), ts(FK.r), aL, aR, true); // Bottom sphere
-  C.lineTo(tx(NKR), ty(armSy + armW/2)); // Up right neck to bottom of arm
-  C.lineTo(tx(armEx), ty(armEy + armW/2)); // Out along arm bottom
-  C.lineTo(tx(armEx), ty(armEy - armW/2)); // Arm end cap
-  C.lineTo(tx(NKR), ty(armSy - armW/2)); // Back along arm top
-  C.lineTo(tx(NKR), ty(NKT)); // Up right neck to top
+  C.moveTo(tx(NKL), ty(NKT)); 
+  C.lineTo(tx(NKL), ty(NKB)); 
+  C.arc(tx(FK.cx), ty(FK.cy), ts(FK.r), aL, aR, true); 
+  
+  // [수정] 가지관 (Side arm) 연결부 생성
+  C.lineTo(tx(NKR), ty(armSy + armW/2)); 
+  C.lineTo(tx(armEx), ty(armEy + armW/2)); 
+  C.lineTo(tx(armEx), ty(armEy - armW/2)); 
+  C.lineTo(tx(NKR), ty(armSy - armW/2)); 
+  C.lineTo(tx(NKR), ty(NKT)); 
   
   C.strokeStyle = gs + '.7)'; C.lineWidth = ts(3); C.stroke();
   C.fillStyle = dk ? 'rgba(180,210,255,.05)' : 'rgba(120,160,220,.05)'; C.fill();
+
+  // Glass reflection on the side arm
+  C.beginPath(); C.moveTo(tx(NKR+5), ty(armSy - armW/2 + 3)); C.lineTo(tx(armEx-5), ty(armEy - armW/2 + 3));
+  C.strokeStyle='rgba(255,255,255,0.4)'; C.lineWidth=ts(1.5); C.stroke();
 
   // Flask Lip (입구테두리)
   rr(tx(NKL-4), ty(NKT-4), ts(nkHalf*2+8), ts(8), ts(3));
@@ -539,7 +552,7 @@ function draw(){
     C.restore();
   }
 
-  // Glass reflections
+  // Glass reflections on round body
   C.beginPath(); C.arc(tx(FK.cx), ty(FK.cy), ts(FK.r-5), Math.PI*0.75, Math.PI*0.95, false);
   C.strokeStyle='rgba(255,255,255,0.4)'; C.lineWidth=ts(4); C.lineCap='round'; C.stroke();
   C.beginPath(); C.moveTo(tx(NKL+5), ty(NKT+15)); C.lineTo(tx(NKL+5), ty(NKB-10));
@@ -619,10 +632,20 @@ function draw(){
   // Test tube
   drawTube(dk);
 
-  // 10. Particles in Tube
+  // 10. Particles in Tube (Draw them before the final test tube glass highlight)
   S.particles.forEach(p=>{
       if(p.zone!=='flask'&&p.zone!=='neck'&&p.zone!=='arm') drawParticle(p, dk);
   });
+
+  // Test Tube Overarching Highlight
+  if (S.tube < 2 || S.tA === 1) {
+      let ox=0, oy=0, op=1;
+      if(S.tA===1){ox=S.tAT*100; oy=-S.tAT*30; op=1-S.tAT;}
+      C.save(); C.globalAlpha = op; C.translate(tx(TM.x)+ts(ox), ty(TM.y)+ts(oy)); C.rotate(T_ANG);
+      C.beginPath(); C.moveTo(ts(5),ts(-5)); C.lineTo(ts(T_LEN-5),ts(-5));
+      C.strokeStyle='rgba(255,255,255,0.4)'; C.lineWidth=ts(1.5); C.stroke();
+      C.restore();
+  }
 
   // Effects
   if(S.heating&&S.temp>55){const now=Date.now()/1000;for(let i=0;i<3;i++){const sy=LIQ_Y-10-((now*.6+i*1.1)%2)*30;const sx=FK.cx+Math.sin(now*1.2+i*2)*10;const op=Math.max(0,1-((now*.6+i*1.1)%2)/2)*.14;C.beginPath();C.arc(tx(sx),ty(sy),ts(3+i*.5),0,Math.PI*2);C.fillStyle=dk?`rgba(200,210,230,${op})`:`rgba(100,120,150,${op*.4})`;C.fill();}}
@@ -661,9 +684,6 @@ function drawTube(dk){
     C.strokeStyle=dk?'rgba(180,220,255,.5)':'rgba(100,150,220,.5)';C.lineWidth=ts(1.5);C.stroke();
     C.fillStyle=dk?'rgba(180,210,255,.02)':'rgba(120,170,230,.03)';C.fill();
     
-    C.beginPath();C.moveTo(ts(5),ts(-5));C.lineTo(ts(T_LEN-5),ts(-5));
-    C.strokeStyle='rgba(255,255,255,0.3)';C.lineWidth=ts(1.5);C.stroke();
-
     let ca=0;
     if(S.tube===0)ca=Math.min(S.ethC,30);else if(S.tube===1)ca=Math.min(S.watC,30);
     if(ca>0){
