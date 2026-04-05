@@ -63,21 +63,22 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--tx);
 @keyframes pb{0%,100%{box-shadow:0 0 0 0 rgba(0,212,170,.4)}50%{box-shadow:0 0 0 10px rgba(0,212,170,0)}}
 @keyframes fi{from{opacity:0;transform:translate(-50%,-50%) scale(.9)}to{opacity:1;transform:translate(-50%,-50%) scale(1)}}
 
-/* Controls Overlay - Moved to bottom left */
-.oc{position:absolute;bottom:20px;left:20px;display:flex;gap:8px;align-items:center;background:rgba(0,0,0,.6);backdrop-filter:blur(10px);padding:10px 16px;border-radius:12px;z-index:10;border:1px solid rgba(255,255,255,.1);flex-wrap:wrap;justify-content:flex-start}
+/* Controls Overlay - Moved below thermometer (top right) */
+.oc{position:absolute;top:90px;right:12px;left:auto;bottom:auto;display:flex;flex-direction:column;gap:10px;align-items:stretch;width:150px;background:rgba(0,0,0,.6);backdrop-filter:blur(10px);padding:12px;border-radius:12px;z-index:10;border:1px solid rgba(255,255,255,.1);}
 [data-theme="light"] .oc{background:rgba(255,255,255,.8);border-color:rgba(0,0,0,.1)}
-.cb{padding:8px 16px;border:none;border-radius:6px;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;transition:all .2s;white-space:nowrap}
+.cb{padding:10px 16px;border:none;border-radius:6px;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:all .2s;white-space:nowrap}
 .cb:hover {transform:translateY(-1px);}
 .cb-h{background:linear-gradient(135deg,#ff6b35,#ff3d00);color:#fff}
 .cb-h.on{background:linear-gradient(135deg,#444,#666);color:#ccc}
 .cb-s{background:linear-gradient(135deg,var(--ac),var(--ac2));color:#fff}
 .cb-s:disabled{opacity:.4;cursor:not-allowed;transform:none;}
 .cb-r{background:var(--cd);color:var(--tx);border:1px solid var(--bd)}
-.sw{display:flex;align-items:center;gap:6px;margin-left:8px;background:var(--sf);padding:6px 12px;border-radius:6px;border:1px solid var(--bd);}
+.sw{display:flex;flex-direction:column;align-items:stretch;gap:8px;background:var(--cd);padding:10px 12px;border-radius:6px;border:1px solid var(--bd);}
+.sw-hdr{display:flex;justify-content:space-between;align-items:center;}
 .sw label{font-size:12px;font-weight:600;color:var(--tx2)}
-.sw input[type=range]{width:60px;height:4px;-webkit-appearance:none;background:var(--bd);border-radius:2px}
+.sw input[type=range]{width:100%;height:4px;-webkit-appearance:none;background:var(--bd);border-radius:2px}
 .sw input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:var(--ac);cursor:pointer}
-.sv{font-family:'JetBrains Mono';font-size:13px;font-weight:700;color:var(--ac);min-width:24px}
+.sv{font-family:'JetBrains Mono';font-size:13px;font-weight:700;color:var(--ac);}
 
 /* Graph Section */
 .gs{height:360px;min-height:340px;background:var(--sf);border-top:1px solid var(--bd);padding:16px 20px 24px;display:flex;flex-direction:column;flex-shrink:0;}
@@ -148,12 +149,17 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--tx);
 @media(max-width:850px){
   #view-exp{grid-template-columns:1fr;height:auto;display:flex;flex-direction:column;}
   .rcol{border-left:none;border-top:1px solid var(--bd)}
-  .cw{min-height:350px;}
+  .cw{min-height:380px;}
   .hd {flex-direction:column; gap:12px;}
   .hd-tabs {width:100%; justify-content:center;}
   .view {height:auto; min-height:calc(100vh - 70px);}
   .lcol {overflow:visible;}
-  .oc { bottom: 10px; left: 10px; padding: 8px 12px; }
+  /* Mobile controls adjust to bottom */
+  .oc { position:absolute; top:auto; bottom:10px; left:10px; right:10px; flex-direction:row; flex-wrap:wrap; width:auto; justify-content:center; }
+  .cb { flex: 1 1 auto; }
+  .sw { flex-direction:row; align-items:center; padding:6px 12px; margin-left:0; flex:1 1 100%; justify-content:center; gap:10px; }
+  .sw-hdr { margin-bottom:0; width:auto; gap:6px; }
+  .sw input[type=range] { width:100px; }
   .gs{height:330px;min-height:330px;padding:16px 14px 24px;}
 }
 </style>
@@ -203,7 +209,10 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--tx);
         <button class="cb cb-h" id="htB" onclick="togHeat()">🔥 가열 시작</button>
         <button class="cb cb-s" id="swB" onclick="doSwap()" disabled>🧪 시험관 교체</button>
         <button class="cb cb-r" onclick="doReset()">↻ 초기화</button>
-        <div class="sw"><label>진행 속도</label><input type="range" min="1" max="10" value="3" id="spR" oninput="setSp(this.value)"><span class="sv" id="spV">×3</span></div>
+        <div class="sw">
+          <div class="sw-hdr"><label>진행 속도</label><span class="sv" id="spV">×3</span></div>
+          <input type="range" min="1" max="10" value="3" id="spR" oninput="setSp(this.value)">
+        </div>
       </div>
     </div>
     <div class="gs">
@@ -278,11 +287,11 @@ const SFX={on:true,ctx:null,
   no(){this._o(280,'sawtooth',.25,.04)},ck(){this._o(900,'square',.02,.02)}
 };
 
-// ===== GEOMETRY =====
+// ===== GEOMETRY (Shifted Left -80px) =====
 const BW=900,BH=520,TBL=430;
 
-// Flask Redesign Base (Classic Distilling Flask)
-const FK={cx:230, cy:TBL-85, r:60}; 
+// Flask Base
+const FK={cx:150, cy:TBL-85, r:60}; 
 const nkHalf = 16;
 const NKL = FK.cx - nkHalf, NKR = FK.cx + nkHalf;
 const NKT = TBL - 280; 
@@ -297,21 +306,21 @@ const STP={x:NKL+2, y:NKT-2, w:nkHalf*2-4, h:10};
 const ARM = {
     sx: NKR,
     sy: NKT + 60, 
-    ex: 350,      
+    ex: 270,      
     ey: NKT + 75, 
     w: 12         
 };
 const THR_BY=ARM.sy;
 const THR={rx:FK.cx-2, top:NKT-50, bot:THR_BY+10};
-const STD={rx:680, rt:TBL-370, rb:TBL, bx:650, bw:65, cy:TBL-252};
-const IB={x:540, top:TBL-150, w:130, bot:TBL}; 
+const STD={rx:600, rt:TBL-370, rb:TBL, bx:570, bw:65, cy:TBL-252};
+const IB={x:460, top:TBL-150, w:130, bot:TBL}; 
 const IB_WT=TBL-115;
-const TM={x:600, y:TBL-165}; 
+const TM={x:520, y:TBL-165}; 
 const T_ANG=1.05,T_LEN=80;
 
 function tubeAxisPt(d){return{x:TM.x+Math.cos(T_ANG)*d,y:TM.y+Math.sin(T_ANG)*d};}
 const TUBE_HALF_W=8;
-const RPTH=[{x:ARM.ex - 8,y:ARM.ey - 2},{x:400,y:ARM.ey+10},{x:460,y:TBL-210},{x:520,y:TBL-180},{x:TM.x,y:TM.y}];
+const RPTH=[{x:ARM.ex - 8,y:ARM.ey - 2},{x:320,y:ARM.ey+10},{x:380,y:TBL-210},{x:440,y:TBL-180},{x:TM.x,y:TM.y}];
 let tubePoly=[];
 function buildPoly(){tubePoly=[];for(let t=0;t<=1;t+=.01){let x=0,y=0;const n=RPTH.length-1;for(let i=0;i<=n;i++){const b=bern(n,i,t);x+=RPTH[i].x*b;y+=RPTH[i].y*b;}tubePoly.push({x,y});}}
 function bern(n,i,t){return comb(n,i)*Math.pow(t,i)*Math.pow(1-t,n-i)}
@@ -392,7 +401,7 @@ function updP(dt){
       }
       p.pi+=25*dt*sp;
       if(p.pi>=tubePoly.length-2){
-        // 시험관에 도달한 입자는 바로 생략(숨김) 처리하여 자연스럽게 모이는 연출
+        // 시험관에 도달한 입자는 바로 생략(숨김) 처리하여 튀거나 버그 발생 차단
         p.zone='sealed';
       } else {
         const idx=Math.min(Math.floor(p.pi),tubePoly.length-1);
@@ -614,8 +623,8 @@ function draw(){
   C.fillText('둥근 플라스크',tx(FK.cx-95),ty(FK.cy-25));
   C.fillText('가열 장치(히팅 맨틀)',tx(FK.cx),ty(TBL+20));
   C.fillText('얼음물 비커',tx(IB.x+IB.w/2),ty(IB.bot+18));
-  C.fillText('고무관',tx(440),ty(TBL-220));
-  C.fillText('시험관 대',tx(760),ty(TBL-75));
+  C.fillText('고무관',tx(360),ty(TBL-220));
+  C.fillText('시험관 대',tx(680),ty(TBL-75));
   C.font=`${ts(10)}px 'Noto Sans KR'`;
   C.fillText('끓임쪽',tx(FK.cx+45),ty(FK.cy+FK.r-10));
   C.fillText('시험관',tx(TM.x+35),ty(TM.y-10));
@@ -626,10 +635,10 @@ function draw(){
 
 function drawTube(dk){
   C.fillStyle=dk?'#3e3224':'#d6b085';
-  rr(tx(715),ty(TBL-65),ts(90),ts(65),ts(4));C.fill();
+  rr(tx(635),ty(TBL-65),ts(90),ts(65),ts(4));C.fill();
   C.fillStyle=dk?'#221a11':'#a3835e';
-  C.beginPath();C.ellipse(tx(740),ty(TBL-35),ts(12),ts(5),0,0,Math.PI*2);C.fill();
-  C.beginPath();C.ellipse(tx(780),ty(TBL-35),ts(12),ts(5),0,0,Math.PI*2);C.fill();
+  C.beginPath();C.ellipse(tx(660),ty(TBL-35),ts(12),ts(5),0,0,Math.PI*2);C.fill();
+  C.beginPath();C.ellipse(tx(700),ty(TBL-35),ts(12),ts(5),0,0,Math.PI*2);C.fill();
 
   let drawMain=true;
   let ox=0,oy=0,op=1;
@@ -657,7 +666,7 @@ function drawTube(dk){
   for(let i=0;i<2;i++){
     if(!S.sealed[i])continue;
     let rackOp=1;if(S.tA===1&&S.tube===i)rackOp=S.tAT;
-    const sx=740+i*40, sy=TBL-75;
+    const sx=660+i*40, sy=TBL-75;
     C.save();C.globalAlpha=rackOp;C.translate(tx(sx),ty(sy));C.rotate(Math.PI/2);
     C.beginPath();C.moveTo(0,ts(-8));C.lineTo(ts(75),ts(-8));C.quadraticCurveTo(ts(80),0,ts(75),ts(8));C.lineTo(0,ts(8));
     C.strokeStyle=dk?'rgba(180,220,255,.5)':'rgba(100,150,220,.5)';C.lineWidth=ts(1.5);C.stroke();
@@ -676,10 +685,10 @@ function drawTube(dk){
   }
 
   C.fillStyle=dk?'#544432':'#e8c396';
-  rr(tx(710),ty(TBL-25),ts(100),ts(25),ts(4));C.fill();
+  rr(tx(630),ty(TBL-25),ts(100),ts(25),ts(4));C.fill();
   C.strokeStyle=dk?'rgba(255,255,255,0.08)':'rgba(0,0,0,0.08)';C.lineWidth=ts(1.5);
-  C.beginPath();C.moveTo(tx(715),ty(TBL-20));C.lineTo(tx(805),ty(TBL-20));C.stroke();
-  C.beginPath();C.moveTo(tx(715),ty(TBL-10));C.lineTo(tx(805),ty(TBL-10));C.stroke();
+  C.beginPath();C.moveTo(tx(635),ty(TBL-20));C.lineTo(tx(725),ty(TBL-20));C.stroke();
+  C.beginPath();C.moveTo(tx(635),ty(TBL-10));C.lineTo(tx(725),ty(TBL-10));C.stroke();
 }
 
 // ===== SIMULATION =====
@@ -747,6 +756,7 @@ function updTU(){
 function doSwap(){
   if(S.tube>=2||S.tA)return;
   S.sealed[S.tube]=true;
+  S.particles.forEach(p=>{if(p.zone==='collected'||p.zone==='condensing')p.zone='sealed';});
   S.tA=1;S.tAT=0;SFX.swp();
   document.getElementById('swB').disabled=true;
   document.getElementById('swP').classList.remove('show');
