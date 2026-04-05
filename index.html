@@ -63,8 +63,8 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--tx);
 @keyframes pb{0%,100%{box-shadow:0 0 0 0 rgba(0,212,170,.4)}50%{box-shadow:0 0 0 10px rgba(0,212,170,0)}}
 @keyframes fi{from{opacity:0;transform:translate(-50%,-50%) scale(.9)}to{opacity:1;transform:translate(-50%,-50%) scale(1)}}
 
-/* Controls Overlay */
-.oc{position:absolute;bottom:16px;left:50%;transform:translateX(-50%);display:flex;gap:8px;align-items:center;background:rgba(0,0,0,.6);backdrop-filter:blur(10px);padding:10px 16px;border-radius:12px;z-index:10;border:1px solid rgba(255,255,255,.1);flex-wrap:wrap;justify-content:center}
+/* Controls Overlay - Moved to bottom left */
+.oc{position:absolute;bottom:20px;left:20px;display:flex;gap:8px;align-items:center;background:rgba(0,0,0,.6);backdrop-filter:blur(10px);padding:10px 16px;border-radius:12px;z-index:10;border:1px solid rgba(255,255,255,.1);flex-wrap:wrap;justify-content:flex-start}
 [data-theme="light"] .oc{background:rgba(255,255,255,.8);border-color:rgba(0,0,0,.1)}
 .cb{padding:8px 16px;border:none;border-radius:6px;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;transition:all .2s;white-space:nowrap}
 .cb:hover {transform:translateY(-1px);}
@@ -153,6 +153,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--tx);
   .hd-tabs {width:100%; justify-content:center;}
   .view {height:auto; min-height:calc(100vh - 70px);}
   .lcol {overflow:visible;}
+  .oc { bottom: 10px; left: 10px; padding: 8px 12px; }
   .gs{height:330px;min-height:330px;padding:16px 14px 24px;}
 }
 </style>
@@ -281,24 +282,24 @@ const SFX={on:true,ctx:null,
 const BW=900,BH=520,TBL=430;
 
 // Flask Redesign Base (Classic Distilling Flask)
-const FK={cx:230, cy:TBL-85, r:60}; // Perfect round sphere
+const FK={cx:230, cy:TBL-85, r:60}; 
 const nkHalf = 16;
 const NKL = FK.cx - nkHalf, NKR = FK.cx + nkHalf;
-const NKT = TBL - 280; // Long straight neck
+const NKT = TBL - 280; 
 const dyNeck = Math.sqrt(FK.r*FK.r - nkHalf*nkHalf);
-const NKB = FK.cy - dyNeck; // Intersection of neck and sphere
+const NKB = FK.cy - dyNeck; 
 
 const LIQ_Y = FK.cy; 
 const CHIPS=[[FK.cx-16,FK.cy+42],[FK.cx+4,FK.cy+46],[FK.cx+18,FK.cy+38],[FK.cx-8,FK.cy+48],[FK.cx+12,FK.cy+44]];
 const STP={x:NKL+2, y:NKT-2, w:nkHalf*2-4, h:10};
 
-// Straight Side Arm (가지관) - 너비 정의(w) 추가!
+// Straight Side Arm
 const ARM = {
     sx: NKR,
-    sy: NKT + 60, // 꺾어지는 위치
-    ex: 350,      // 고무관 연결부
-    ey: NKT + 75, // 비스듬히 아래로
-    w: 12         // 가지관 두께
+    sy: NKT + 60, 
+    ex: 350,      
+    ey: NKT + 75, 
+    w: 12         
 };
 const THR_BY=ARM.sy;
 const THR={rx:FK.cx-2, top:NKT-50, bot:THR_BY+10};
@@ -310,7 +311,6 @@ const T_ANG=1.05,T_LEN=80;
 
 function tubeAxisPt(d){return{x:TM.x+Math.cos(T_ANG)*d,y:TM.y+Math.sin(T_ANG)*d};}
 const TUBE_HALF_W=8;
-// 고무관 연결부 살짝 오버랩되도록 조정 (ARM.ex - 8)
 const RPTH=[{x:ARM.ex - 8,y:ARM.ey - 2},{x:400,y:ARM.ey+10},{x:460,y:TBL-210},{x:520,y:TBL-180},{x:TM.x,y:TM.y}];
 let tubePoly=[];
 function buildPoly(){tubePoly=[];for(let t=0;t<=1;t+=.01){let x=0,y=0;const n=RPTH.length-1;for(let i=0;i<=n;i++){const b=bern(n,i,t);x+=RPTH[i].x*b;y+=RPTH[i].y*b;}tubePoly.push({x,y});}}
@@ -392,50 +392,12 @@ function updP(dt){
       }
       p.pi+=25*dt*sp;
       if(p.pi>=tubePoly.length-2){
-        if (S.tube >= 2 || S.tA !== 0) {
-            p.zone = 'sealed';
-        } else {
-            p.zone='condensing';
-        }
+        // 시험관에 도달한 입자는 바로 생략(숨김) 처리하여 자연스럽게 모이는 연출
+        p.zone='sealed';
       } else {
         const idx=Math.min(Math.floor(p.pi),tubePoly.length-1);
         const tg=tubePoly[idx];
         p.x+=(tg.x-p.x)*0.6;p.y+=(tg.y-p.y)*0.6;
-      }
-    }
-    else if(p.zone==='condensing'){
-      const tgt=tubeAxisPt(35);
-      const dx=tgt.x-p.x, dy=tgt.y-p.y;
-      const d=Math.sqrt(dx*dx+dy*dy);
-      if(d<5){p.zone='collected';} else {p.x+=(dx/d)*45*dt*sp;p.y+=(dy/d)*45*dt*sp;}
-    }
-    else if(p.zone==='collected'){
-      // 입자가 빈공간을 찾아 활발히 퍼지도록 이동
-      p.vx+=(Math.random()-.5)*1.5;
-      p.vy+=(Math.random()-.5)*1.5;
-      p.vx*=.88;p.vy*=.88;
-      p.x+=p.vx;p.y+=p.vy;
-      
-      const proj=tubeProject(p.x,p.y);
-      let clamped=false;
-      
-      const ca = p.type === 'ethanol' ? Math.min(S.ethC, 30) : Math.min(S.watC, 30);
-      const lw = Math.max(15, (ca/30)*T_LEN*0.65); // 최소 영역 15 확보
-      const pr = p.r; // 입자 반경
-      
-      const minA = T_LEN - lw + pr + 1;
-      const maxA = T_LEN - pr - 1;
-      const maxPerp = TUBE_HALF_W - pr - 0.5; // 시험관 두께 밖으로 빠져나가지 못하게 강력 통제
-      
-      if(proj.along<minA){proj.along=minA;clamped=true;}
-      if(proj.along>maxA){proj.along=maxA;clamped=true;}
-      if(proj.perp<-maxPerp){proj.perp=-maxPerp;clamped=true;}
-      if(proj.perp>maxPerp){proj.perp=maxPerp;clamped=true;}
-      
-      if(clamped){
-        const np=tubeUnproject(proj.along,proj.perp);
-        p.x=np.x;p.y=np.y;
-        p.vx*=-0.5;p.vy*=-0.5;
       }
     }
   });
@@ -486,7 +448,7 @@ function draw(){
   bGrad.addColorStop(0, dk?'#555':'#aaa'); bGrad.addColorStop(1, dk?'#222':'#555');
   C.fillStyle=bGrad; C.fill();
   
-  // Stand Clamp (Holding flask neck)
+  // Stand Clamp
   C.fillStyle=dk?'#555':'#888'; C.fillRect(tx(NKR), ty(STD.cy-3), tx(STD.rx)-tx(NKR), ts(8));
   C.beginPath(); C.arc(tx(NKR+2), ty(STD.cy+1), ts(8), 0, Math.PI*2);
   C.fillStyle=dk?'#222':'#444'; C.fill();
@@ -503,7 +465,7 @@ function draw(){
       C.strokeStyle = 'rgba(255,80,0,0.8)'; C.lineWidth = ts(4); C.shadowColor = '#ff5000'; C.shadowBlur = 15; C.stroke(); C.shadowBlur = 0;
   }
 
-  // 3. Round Distilling Flask Body, Neck & Arm (Perfectly continuous)
+  // 3. Flask Body, Neck & Arm
   const aL = Math.atan2(NKB - FK.cy, NKL - FK.cx);
   const aR = Math.atan2(NKB - FK.cy, NKR - FK.cx);
   const armSy = ARM.sy; const armW = ARM.w; const armEx = ARM.ex; const armEy = ARM.ey;
@@ -522,7 +484,6 @@ function draw(){
   C.strokeStyle = gs + '.7)'; C.lineWidth = ts(3); C.stroke();
   C.fillStyle = dk ? 'rgba(180,210,255,.05)' : 'rgba(120,160,220,.05)'; C.fill();
 
-  // Glass reflection on the side arm
   C.beginPath(); C.moveTo(tx(NKR+5), ty(armSy - armW/2 + 3)); C.lineTo(tx(armEx-5), ty(armEy - armW/2 + 3));
   C.strokeStyle='rgba(255,255,255,0.4)'; C.lineWidth=ts(1.5); C.stroke();
 
@@ -531,7 +492,7 @@ function draw(){
   C.fillStyle = dk?'rgba(180,210,255,.2)':'rgba(120,160,220,.2)'; C.fill();
   C.strokeStyle = gs+'.7)'; C.lineWidth=ts(2); C.stroke();
 
-  // Liquid with Meniscus
+  // Liquid
   const lR=1-(S.ethC+S.watC)/80;
   if(lR>.02){
     C.save();
@@ -550,16 +511,16 @@ function draw(){
     C.restore();
   }
 
-  // Glass reflections on round body
+  // Reflections
   C.beginPath(); C.arc(tx(FK.cx), ty(FK.cy), ts(FK.r-5), Math.PI*0.75, Math.PI*0.95, false);
   C.strokeStyle='rgba(255,255,255,0.4)'; C.lineWidth=ts(4); C.lineCap='round'; C.stroke();
   C.beginPath(); C.moveTo(tx(NKL+5), ty(NKT+15)); C.lineTo(tx(NKL+5), ty(NKB-10));
   C.lineWidth=ts(2.5); C.stroke();
 
-  // Boiling chips
+  // Chips
   CHIPS.forEach(([cx,cy])=>{C.beginPath();C.arc(tx(cx),ty(cy),ts(2.2),0,Math.PI*2);C.fillStyle=dk?'rgba(170,170,170,.8)':'rgba(100,100,100,.8)';C.fill();});
 
-  // 4. Particles in Flask
+  // 4. Particles
   S.particles.forEach(p=>{
       if(p.zone==='flask'||p.zone==='neck'||p.zone==='arm') drawParticle(p, dk);
   });
@@ -576,7 +537,6 @@ function draw(){
   C.fillStyle = hmGrad; C.fill();
   C.strokeStyle = dk?'#020617':'#475569'; C.lineWidth=ts(2); C.stroke();
 
-  // Heating Mantle Dial
   C.beginPath(); C.arc(tx(FK.cx), ty(TBL-20), ts(12), 0, Math.PI*2);
   C.fillStyle = dk?'#111':'#e2e8f0'; C.fill();
   C.strokeStyle = dk?'#555':'#94a3b8'; C.lineWidth=ts(2); C.stroke();
@@ -605,7 +565,7 @@ function draw(){
   C.strokeStyle=dk?'#a87a12':'#8a6510';C.lineWidth=ts(12);C.stroke();
   C.strokeStyle=dk?'#d6a745':'#c09127';C.lineWidth=ts(4);C.stroke();
 
-  // 9. Ice beaker
+  // 9. Beaker
   C.beginPath(); C.moveTo(tx(IB.x), ty(IB.top)); C.lineTo(tx(IB.x), ty(IB.bot-5));
   C.quadraticCurveTo(tx(IB.x), ty(IB.bot), tx(IB.x+5), ty(IB.bot)); C.lineTo(tx(IB.x+IB.w-5), ty(IB.bot));
   C.quadraticCurveTo(tx(IB.x+IB.w), ty(IB.bot), tx(IB.x+IB.w), ty(IB.bot-5)); C.lineTo(tx(IB.x+IB.w), ty(IB.top));
@@ -630,12 +590,11 @@ function draw(){
   // Test tube
   drawTube(dk);
 
-  // 10. Particles in Tube (Draw them before the final test tube glass highlight)
+  // 10. Particles in Tube
   S.particles.forEach(p=>{
-      if(p.zone!=='flask'&&p.zone!=='neck'&&p.zone!=='arm') drawParticle(p, dk);
+      if(p.zone==='tube') drawParticle(p, dk);
   });
 
-  // Test Tube Overarching Highlight
   if (S.tube < 2 || S.tA === 1) {
       let ox=0, oy=0, op=1;
       if(S.tA===1){ox=S.tAT*100; oy=-S.tAT*30; op=1-S.tAT;}
@@ -788,7 +747,6 @@ function updTU(){
 function doSwap(){
   if(S.tube>=2||S.tA)return;
   S.sealed[S.tube]=true;
-  S.particles.forEach(p=>{if(p.zone==='collected'||p.zone==='condensing')p.zone='sealed';});
   S.tA=1;S.tAT=0;SFX.swp();
   document.getElementById('swB').disabled=true;
   document.getElementById('swP').classList.remove('show');
