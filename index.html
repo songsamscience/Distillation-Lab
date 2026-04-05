@@ -87,7 +87,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--tx);
 .gc canvas{width:100%!important;height:100%!important}
 
 /* Right Column (Info) */
-.rcol{background:var(--sf);border-left:1px solid var(--bd);overflow-y:auto;padding:16px;font-size:14px;}
+.rcol{background:var(--sf);border-left:1px solid var(--bd);overflow-y:auto;padding:16px;font-size:14px;display:flex;flex-direction:column;}
 .pn{background:var(--cd);border:1px solid var(--bd);border-radius:10px;padding:16px;margin-bottom:14px}
 .pt{font-size:14px;font-weight:800;color:var(--ac);margin-bottom:12px;display:flex;align-items:center;gap:6px}
 .bt{width:100%;border-collapse:collapse;font-size:13px}
@@ -144,6 +144,8 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--tx);
 .ibtn:disabled{opacity:.4;cursor:not-allowed}
 .hid{display:none!important}
 
+.credits {text-align:center; margin-top:auto; padding-top:20px; font-size:12.5px; color:var(--tx3); font-weight:500; opacity:0.8;}
+
 @media(max-width:850px){
   #view-exp{grid-template-columns:1fr;height:auto;display:flex;flex-direction:column;}
   .rcol{border-left:none;border-top:1px solid var(--bd)}
@@ -170,6 +172,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--tx);
       <label class="sci"><input type="checkbox" id="sc3"><span>환기 상태를 확인했습니다.</span></label>
     </div>
     <button class="ibtn" id="goBtn" disabled onclick="beginLab()">✅ 안전 확인 후 실험 시작</button>
+    <div style="margin-top:24px; font-size:12px; color:var(--tx3); font-weight:500;">ⓒ 송쌤과학 | 검수: 승재쌤</div>
   </div>
 </div>
 
@@ -229,6 +232,8 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--tx);
         <li><span class="sn dn">3</span><div><b>상태 변화 원리</b><br>플라스크: 가열에 의한 <b>기화</b>(액→기)<br>찬물 비커: 냉각에 의한 <b>액화</b>(기→액)</div></li>
       </ul>
     </div>
+    
+    <div class="credits">ⓒ 송쌤과학 | 검수: 승재쌤</div>
   </div>
 </div>
 
@@ -241,6 +246,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--tx);
     </div>
     <div id="qB"></div>
     <div class="sb hid" id="scB"><div class="sbg" id="scG">0%</div><div class="sbl">정답률</div></div>
+    <div class="credits" style="margin-top:40px; margin-bottom:20px;">ⓒ 송쌤과학 | 검수: 승재쌤</div>
   </div>
 </div>
 
